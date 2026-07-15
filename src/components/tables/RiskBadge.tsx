@@ -7,6 +7,14 @@ const CONFIG: Record<NivelRiesgo, { etiqueta: string; color: string; fondo: stri
   sin_parametro: { etiqueta: "Sin parámetro", color: "var(--color-text-muted)", fondo: "var(--color-surface-alt)" },
 };
 
+/** Color de acento por nivel de riesgo, reutilizable en otras celdas (ej. "Días en cámara"). */
+export const COLOR_RIESGO: Record<NivelRiesgo, string> = {
+  ok: CONFIG.ok.color,
+  riesgo: CONFIG.riesgo.color,
+  critico: CONFIG.critico.color,
+  sin_parametro: CONFIG.sin_parametro.color,
+};
+
 export function RiskBadge({ nivel }: { nivel: NivelRiesgo }) {
   const { etiqueta, color, fondo } = CONFIG[nivel];
   return (

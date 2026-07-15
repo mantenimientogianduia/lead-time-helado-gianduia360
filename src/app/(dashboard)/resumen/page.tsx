@@ -17,6 +17,7 @@ import {
 import { obtenerPartidasCamaraEnriquecidas } from "@/lib/repositories/camaraRepository";
 import { listarFamilias } from "@/lib/repositories/productosRepository";
 import { formatearNumero } from "@/lib/domain/formato";
+import { promedio } from "@/lib/domain/estadisticas";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,26 @@ interface ConteoRiesgo {
   sin_parametro: number;
 }
 
+interface VejezFamilia {
+  familia: string;
+  promedioDias: number | null;
+  n: number;
+}
+
+function calcularVejezPorFamilia(partidas: Awaited<ReturnType<typeof obtenerPartidasCamaraEnriquecidas>>): VejezFamilia[] {
+  const porFamilia = new Map<string, number[]>();
+  for (const p of partidas) {
+    if (p.diasEnCamara === null) continue;
+    const clave = p.familia ?? "Sin familia";
+    const lista = porFamilia.get(clave) ?? [];
+    lista.push(p.diasEnCamara);
+    porFamilia.set(clave, lista);
+  }
+  return Array.from(porFamilia.entries())
+    .map(([familia, dias]) => ({ familia, promedioDias: promedio(dias), n: dias.length }))
+    .sort((a, b) => (b.promedioDias ?? 0) - (a.promedioDias ?? 0));
+}
+
 interface DatosResumen {
   serieMensual: Awaited<ReturnType<typeof obtenerSerieMensual>>;
   porFamilia: Awaited<ReturnType<typeof obtenerDesglosePorFamilia>>;
@@ -55,6 +76,7 @@ interface DatosResumen {
   cobertura: Awaited<ReturnType<typeof obtenerCoberturaGlobal>>;
   familias: string[];
   partidasPorRiesgo: ConteoRiesgo;
+  vejezPorFamilia: VejezFamilia[];
   error: string | null;
 }
 
@@ -73,7 +95,9 @@ async function cargarDatos(desde: string, hasta: string, familia?: string): Prom
     const partidasPorRiesgo: ConteoRiesgo = { ok: 0, riesgo: 0, critico: 0, sin_parametro: 0 };
     for (const p of partidas) partidasPorRiesgo[p.nivelRiesgo] += 1;
 
-    return { serieMensual, porFamilia, porProducto, cobertura, familias, partidasPorRiesgo, error: null };
+    const vejezPorFamilia = calcularVejezPorFamilia(partidas);
+
+    return { serieMensual, porFamilia, porProducto, cobertura, familias, partidasPorRiesgo, vejezPorFamilia, error: null };
   } catch (error) {
     console.error("Error cargando datos de Resumen", error);
     return {
@@ -83,6 +107,7 @@ async function cargarDatos(desde: string, hasta: string, familia?: string): Prom
       cobertura: { totalLineas: 0, conFechaFabricacion: 0, pctCobertura: null, sinCabeceraVenta: 0, notasCredito: 0 },
       familias: [],
       partidasPorRiesgo: { ok: 0, riesgo: 0, critico: 0, sin_parametro: 0 },
+      vejezPorFamilia: [],
       error: "Datos operativos pendientes de conexión G360.",
     };
   }
@@ -99,7 +124,7 @@ export default async function ResumenPage({
   const hasta = params.hasta ?? porDefecto.hasta;
   const familia = params.familia;
 
-  const { serieMensual, porFamilia, porProducto, cobertura, familias, partidasPorRiesgo, error } =
+  const { serieMensual, porFamilia, porProducto, cobertura, familias, partidasPorRiesgo, vejezPorFamilia, error } =
     await cargarDatos(desde, hasta, familia);
 
   const ultimoPunto = serieMensual[serieMensual.length - 1] ?? null;
@@ -151,6 +176,36 @@ export default async function ResumenPage({
           tono={partidasPorRiesgo.critico > 0 ? "danger" : "navy"}
         />
       </div>
+
+      <ChartCard
+        titulo="Vejez promedio actual en cámara, por familia"
+        subtitulo="Antigüedad promedio (días) de las partidas que hoy están en depósito 8"
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${Math.max(1, vejezPorFamilia.length)}, 1fr)`,
+            gap: "12px",
+          }}
+        >
+          {vejezPorFamilia.length === 0 ? (
+            <p style={{ color: "var(--color-text-muted)", fontSize: "13px" }}>
+              No hay partidas en cámara para estos filtros.
+            </p>
+          ) : (
+            vejezPorFamilia.map((v) => (
+              <MetricCallout
+                key={v.familia}
+                label={v.familia}
+                valor={v.promedioDias === null ? "—" : `${formatearNumero(v.promedioDias)} días`}
+                aclaracion={`${v.n} partidas en depósito 8`}
+                tono="navy"
+                tamano="grande"
+              />
+            ))
+          )}
+        </div>
+      </ChartCard>
 
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px" }}>
         <ChartCard titulo="Evolución mensual del lead time" subtitulo="Mediana y percentil 95, días entre fabricación y venta">

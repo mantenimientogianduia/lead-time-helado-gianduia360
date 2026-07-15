@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChartCard } from "@/components/charts/ChartCard";
 import { MetricCallout } from "@/components/charts/MetricCallout";
 import { DataTable } from "@/components/tables/DataTable";
-import { RiskBadge } from "@/components/tables/RiskBadge";
+import { RiskBadge, COLOR_RIESGO } from "@/components/tables/RiskBadge";
 import { StatusNote } from "@/components/StatusNote";
 import { FamiliaFilter } from "@/components/filters/FamiliaFilter";
 import { RiesgoFilter } from "@/components/filters/RiesgoFilter";
@@ -107,14 +107,44 @@ export default async function CamaraPage({
           columns={[
             { key: "detalle", header: "Producto", render: (p) => p.detalle },
             { key: "familia", header: "Familia", render: (p) => p.familia ?? "—" },
-            { key: "lote", header: "Lote", render: (p) => (p.lote ? p.lote.slice(0, 24) : "—") },
-            { key: "venc", header: "Vencimiento", render: (p) => formatearFecha(p.venc) },
             {
               key: "dias",
               header: "Días en cámara",
               align: "right",
-              render: (p) => (p.diasEnCamara === null ? "—" : formatearNumero(p.diasEnCamara, 0)),
+              render: (p) =>
+                p.diasEnCamara === null ? (
+                  "—"
+                ) : (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <span
+                      style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        backgroundColor: COLOR_RIESGO[p.nivelRiesgo],
+                        flexShrink: 0,
+                      }}
+                    />
+                    <strong>{formatearNumero(p.diasEnCamara, 0)}</strong>
+                  </span>
+                ),
             },
+            { key: "loteFab", header: "Lote fab.", render: (p) => formatearFecha(p.fechaFabricacion) },
+            {
+              key: "reprocesable",
+              header: "Reprocesable",
+              render: (p) => (
+                <strong
+                  style={{
+                    color: p.reprocesable ? "var(--color-success)" : "var(--color-text-muted)",
+                  }}
+                >
+                  {p.reprocesable === null ? "—" : p.reprocesable ? "Sí" : "No"}
+                </strong>
+              ),
+            },
+            { key: "lote", header: "Lote", render: (p) => (p.lote ? p.lote.slice(0, 24) : "—") },
+            { key: "venc", header: "Vencimiento", render: (p) => formatearFecha(p.venc) },
             {
               key: "fuente",
               header: "Fuente fecha",

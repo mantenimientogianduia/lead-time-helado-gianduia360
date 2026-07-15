@@ -23,6 +23,7 @@ interface FilaCruda {
   detalle: string | null;
   familia: string | null;
   leadtime_permitido: string | number | null;
+  reprocesable: boolean | null;
   lote: string | null;
   venc: string | null;
   presentacion: string | number | null;
@@ -40,6 +41,7 @@ async function consultarPartidasCrudas(familia?: string): Promise<FilaCruda[]> {
        p.detalle,
        p.familia,
        p.leadtime_permitido,
+       p.reprocesable,
        ps.lote,
        ps.venc,
        ps.presentacion,
@@ -117,6 +119,7 @@ function enriquecer(fila: FilaCruda, ahora: Date): PartidaCamara {
     nivelRiesgo: evaluacion.nivel,
     pctConsumido: evaluacion.pctConsumido,
     accionSugerida: evaluacion.accionSugerida,
+    reprocesable: fila.reprocesable,
   };
 }
 

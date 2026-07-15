@@ -57,6 +57,7 @@ export interface PartidaCamara {
   nivelRiesgo: NivelRiesgo;
   pctConsumido: number | null;
   accionSugerida: string;
+  reprocesable: boolean | null;
 }
 
 export interface ResumenKpis {

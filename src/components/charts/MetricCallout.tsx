@@ -12,21 +12,23 @@ export interface MetricCalloutProps {
   valor: string;
   aclaracion?: string;
   tono?: TonoMetrica;
+  tamano?: "normal" | "grande";
 }
 
-export function MetricCallout({ label, valor, aclaracion, tono = "navy" }: MetricCalloutProps) {
+export function MetricCallout({ label, valor, aclaracion, tono = "navy", tamano = "normal" }: MetricCalloutProps) {
+  const esGrande = tamano === "grande";
   return (
     <div
       style={{
         backgroundColor: "#ffffff",
         border: "1px solid var(--color-border)",
         borderRadius: "var(--radius-md)",
-        padding: "16px",
+        padding: esGrande ? "20px" : "16px",
       }}
     >
       <div
         style={{
-          fontSize: "12px",
+          fontSize: esGrande ? "13px" : "12px",
           fontWeight: 700,
           color: "var(--color-text-muted)",
           textTransform: "uppercase",
@@ -37,11 +39,11 @@ export function MetricCallout({ label, valor, aclaracion, tono = "navy" }: Metri
       </div>
       <div
         style={{
-          fontSize: "32px",
+          fontSize: esGrande ? "52px" : "32px",
           fontWeight: 700,
           color: COLOR_POR_TONO[tono],
-          lineHeight: 1.1,
-          marginTop: "6px",
+          lineHeight: 1.05,
+          marginTop: esGrande ? "10px" : "6px",
         }}
       >
         {valor}
