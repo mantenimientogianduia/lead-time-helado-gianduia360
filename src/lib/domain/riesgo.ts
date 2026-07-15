@@ -39,6 +39,32 @@ export function clasificarRiesgo(
   return { nivel, pctConsumido, accionSugerida: ACCIONES[nivel] };
 }
 
+export interface AjusteReproceso {
+  /** true cuando la partida esta vieja/en riesgo Y el producto admite reproceso: accion clara y accionable. */
+  esCandidatoReproceso: boolean;
+  accionSugerida: string;
+}
+
+/**
+ * Si el producto es reprocesable y la partida esta en riesgo o critica, reprocesar (renovar la
+ * antiguedad) es una accion mas especifica y accionable que la generica de `clasificarRiesgo`.
+ */
+export function ajustarAccionPorReproceso(
+  evaluacion: EvaluacionRiesgo,
+  reprocesable: boolean | null | undefined
+): AjusteReproceso {
+  if (!reprocesable || (evaluacion.nivel !== "riesgo" && evaluacion.nivel !== "critico")) {
+    return { esCandidatoReproceso: false, accionSugerida: evaluacion.accionSugerida };
+  }
+
+  const accionSugerida =
+    evaluacion.nivel === "critico"
+      ? "Reprocesar ahora para renovar la antigüedad (o evaluar traslado/promoción si no aplica)."
+      : "Reprocesar para renovar la antigüedad antes de que pase a crítico.";
+
+  return { esCandidatoReproceso: true, accionSugerida };
+}
+
 export type EstadoCumplimiento = "cumple" | "excede" | "sin_parametro";
 
 /** Compara un lead time promedio/mediana historico contra el leadtime_permitido del producto. */

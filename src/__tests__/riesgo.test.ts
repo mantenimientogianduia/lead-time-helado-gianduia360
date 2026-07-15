@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clasificarRiesgo } from "@/lib/domain/riesgo";
+import { ajustarAccionPorReproceso, clasificarRiesgo } from "@/lib/domain/riesgo";
 
 describe("clasificarRiesgo", () => {
   it("marca sin_parametro cuando leadtimePermitido es null", () => {
@@ -46,5 +46,46 @@ describe("clasificarRiesgo", () => {
       const r = clasificarRiesgo(dias, 10);
       expect(r.accionSugerida.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("ajustarAccionPorReproceso", () => {
+  it("no marca candidato si el producto no es reprocesable", () => {
+    const evaluacion = clasificarRiesgo(11, 10); // critico
+    const r = ajustarAccionPorReproceso(evaluacion, false);
+    expect(r.esCandidatoReproceso).toBe(false);
+    expect(r.accionSugerida).toBe(evaluacion.accionSugerida);
+  });
+
+  it("no marca candidato si reprocesable es null/undefined", () => {
+    const evaluacion = clasificarRiesgo(11, 10);
+    expect(ajustarAccionPorReproceso(evaluacion, null).esCandidatoReproceso).toBe(false);
+    expect(ajustarAccionPorReproceso(evaluacion, undefined).esCandidatoReproceso).toBe(false);
+  });
+
+  it("no marca candidato si el nivel es ok, aunque sea reprocesable", () => {
+    const evaluacion = clasificarRiesgo(2, 10); // ok
+    const r = ajustarAccionPorReproceso(evaluacion, true);
+    expect(r.esCandidatoReproceso).toBe(false);
+  });
+
+  it("no marca candidato si el nivel es sin_parametro, aunque sea reprocesable", () => {
+    const evaluacion = clasificarRiesgo(20, null);
+    const r = ajustarAccionPorReproceso(evaluacion, true);
+    expect(r.esCandidatoReproceso).toBe(false);
+  });
+
+  it("marca candidato y sugiere reprocesar cuando esta en riesgo y es reprocesable", () => {
+    const evaluacion = clasificarRiesgo(7, 10); // riesgo (70%)
+    const r = ajustarAccionPorReproceso(evaluacion, true);
+    expect(r.esCandidatoReproceso).toBe(true);
+    expect(r.accionSugerida).toMatch(/reprocesar/i);
+  });
+
+  it("marca candidato y sugiere reprocesar cuando esta critico y es reprocesable", () => {
+    const evaluacion = clasificarRiesgo(15, 10); // critico
+    const r = ajustarAccionPorReproceso(evaluacion, true);
+    expect(r.esCandidatoReproceso).toBe(true);
+    expect(r.accionSugerida).toMatch(/reprocesar/i);
   });
 });

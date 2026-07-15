@@ -58,6 +58,7 @@ export interface PartidaCamara {
   pctConsumido: number | null;
   accionSugerida: string;
   reprocesable: boolean | null;
+  esCandidatoReproceso: boolean;
 }
 
 export interface ResumenKpis {

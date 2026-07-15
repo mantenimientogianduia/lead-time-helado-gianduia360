@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       { encabezado: "Días en cámara", valor: (p) => p.diasEnCamara },
       { encabezado: "Lote fab.", valor: (p) => formatearFecha(p.fechaFabricacion) },
       { encabezado: "Reprocesable", valor: (p) => (p.reprocesable === null ? null : p.reprocesable ? "Sí" : "No") },
+      { encabezado: "Candidato a reproceso", valor: (p) => (p.esCandidatoReproceso ? "Sí" : "No") },
       { encabezado: "Lote", valor: (p) => p.lote },
       { encabezado: "Vencimiento", valor: (p) => formatearFecha(p.venc) },
       { encabezado: "Fuente fecha", valor: (p) => p.fuenteFecha },

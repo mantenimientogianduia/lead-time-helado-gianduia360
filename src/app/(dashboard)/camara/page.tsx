@@ -105,7 +105,36 @@ export default async function CamaraPage({
           rows={partidas}
           vacio="No hay partidas en cámara para estos filtros."
           columns={[
-            { key: "detalle", header: "Producto", render: (p) => p.detalle },
+            {
+              key: "detalle",
+              header: "Producto",
+              render: (p) =>
+                p.esCandidatoReproceso ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "7px" }}>
+                    <span
+                      title="Reprocesable y con antigüedad para renovar: reprocesar ahora"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "20px",
+                        height: "20px",
+                        borderRadius: "50%",
+                        backgroundColor: "var(--color-accent)",
+                        color: "var(--color-on-accent)",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      ♻
+                    </span>
+                    {p.detalle}
+                  </span>
+                ) : (
+                  p.detalle
+                ),
+            },
             { key: "familia", header: "Familia", render: (p) => p.familia ?? "—" },
             {
               key: "dias",

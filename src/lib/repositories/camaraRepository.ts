@@ -1,6 +1,6 @@
 import { getPool } from "@/lib/db/pool";
 import { resolverFechaFabricacion } from "@/lib/domain/fechaFabricacion";
-import { clasificarRiesgo } from "@/lib/domain/riesgo";
+import { ajustarAccionPorReproceso, clasificarRiesgo } from "@/lib/domain/riesgo";
 import type { PartidaCamara } from "@/lib/types/dominio";
 import {
   activo,
@@ -102,6 +102,8 @@ function enriquecer(fila: FilaCruda, ahora: Date): PartidaCamara {
       ? { nivel: "sin_parametro" as const, pctConsumido: null, accionSugerida: "Dato de antigüedad no disponible para esta partida." }
       : clasificarRiesgo(diasEnCamara, leadtimePermitido);
 
+  const ajuste = ajustarAccionPorReproceso(evaluacion, fila.reprocesable);
+
   return {
     idPartistock: fila.id_partistock,
     idProd: fila.id_prod,
@@ -118,8 +120,9 @@ function enriquecer(fila: FilaCruda, ahora: Date): PartidaCamara {
     leadtimePermitido,
     nivelRiesgo: evaluacion.nivel,
     pctConsumido: evaluacion.pctConsumido,
-    accionSugerida: evaluacion.accionSugerida,
+    accionSugerida: ajuste.accionSugerida,
     reprocesable: fila.reprocesable,
+    esCandidatoReproceso: ajuste.esCandidatoReproceso,
   };
 }
 
