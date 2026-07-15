@@ -13,6 +13,7 @@ import {
   ESTADOS_VENTA_VALIDOS,
   FAMILIAS_INCLUIDAS,
   familiaIncluida,
+  fechaFabConfiable,
   RUBROS_HELADO,
 } from "./shared";
 
@@ -58,9 +59,9 @@ export async function obtenerSerieMensual(
     `select
        to_char(date_trunc('month', dv.fecha_venta), 'YYYY-MM') as mes,
        count(*) as total_lineas,
-       count(dv.lote_fabricacion) as con_fecha_fab,
+       count(*) filter (where ${fechaFabConfiable("dv")}) as con_fecha_fab,
        array_agg((dv.fecha_venta - dv.lote_fabricacion)::int)
-         filter (where dv.lote_fabricacion is not null) as dias_lead_time
+         filter (where ${fechaFabConfiable("dv")}) as dias_lead_time
      ${CLAUSULA_BASE}
      group by mes
      order by mes`,
@@ -91,7 +92,7 @@ export async function obtenerDesglosePorFamilia(
     `select
        coalesce(p.familia, 'Sin familia') as familia,
        array_agg((dv.fecha_venta - dv.lote_fabricacion)::int)
-         filter (where dv.lote_fabricacion is not null) as dias_lead_time
+         filter (where ${fechaFabConfiable("dv")}) as dias_lead_time
      ${CLAUSULA_BASE}
      group by familia
      order by familia`,
@@ -123,7 +124,7 @@ export async function obtenerDesglosePorProducto(
        max(p.familia) as familia,
        max(p.leadtime_permitido) as leadtime_permitido,
        array_agg((dv.fecha_venta - dv.lote_fabricacion)::int)
-         filter (where dv.lote_fabricacion is not null) as dias_lead_time
+         filter (where ${fechaFabConfiable("dv")}) as dias_lead_time
      ${CLAUSULA_BASE}
      group by p.id_prod
      order by count(*) desc
@@ -164,7 +165,10 @@ export async function obtenerCoberturaGlobal(filtros: FiltrosHistorico): Promise
   const { rows } = await pool.query(
     `select
        count(*) as total_lineas,
-       count(dv.lote_fabricacion) as con_fecha_fab,
+       count(*) filter (where ${fechaFabConfiable("dv")}) as con_fecha_fab,
+       count(*) filter (
+         where dv.lote_fabricacion is not null and not ${fechaFabConfiable("dv")}
+       ) as fecha_fab_sospechosa,
        count(*) filter (where v.id_venta is null) as sin_cabecera_venta
      from g360.f_detalles_ventas dv
      join g360.d_productos p on p.id_prod = dv.id_prod
@@ -202,6 +206,7 @@ export async function obtenerCoberturaGlobal(filtros: FiltrosHistorico): Promise
     pctCobertura: totalLineas > 0 ? Math.round((conFechaFabricacion / totalLineas) * 1000) / 10 : null,
     sinCabeceraVenta: Number(fila?.sin_cabecera_venta ?? 0),
     notasCredito: Number(ncRows[0]?.notas_credito ?? 0),
+    fechaFabSospechosa: Number(fila?.fecha_fab_sospechosa ?? 0),
   };
 }
 
@@ -216,6 +221,7 @@ export interface FilaExportVenta {
   diasLeadTime: number | null;
   leadtimePermitido: number | null;
   sinCabeceraVenta: boolean;
+  fechaFabSospechosa: boolean;
 }
 
 export async function obtenerFilasExport(
@@ -234,7 +240,8 @@ export async function obtenerFilasExport(
        p.leadtime_permitido,
        dv.fecha_venta,
        dv.lote_fabricacion,
-       (dv.fecha_venta - dv.lote_fabricacion)::int as dias_lead_time,
+       (case when ${fechaFabConfiable("dv")} then (dv.fecha_venta - dv.lote_fabricacion)::int else null end) as dias_lead_time,
+       (dv.lote_fabricacion is not null and not ${fechaFabConfiable("dv")}) as fecha_fab_sospechosa,
        (v.id_venta is null) as sin_cabecera_venta
      ${CLAUSULA_BASE}
      order by dv.fecha_venta desc
@@ -252,6 +259,7 @@ export async function obtenerFilasExport(
     loteFabricacion: aFechaISO(fila.lote_fabricacion),
     diasLeadTime: fila.dias_lead_time === null ? null : Number(fila.dias_lead_time),
     leadtimePermitido: fila.leadtime_permitido === null ? null : Number(fila.leadtime_permitido),
+    fechaFabSospechosa: Boolean(fila.fecha_fab_sospechosa),
     sinCabeceraVenta: Boolean(fila.sin_cabecera_venta),
   }));
 }

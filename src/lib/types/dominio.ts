@@ -9,6 +9,8 @@ export interface CoberturaDatos {
   pctCobertura: number | null;
   sinCabeceraVenta: number;
   notasCredito: number;
+  /** lote_fabricacion cargado pero descartado (fecha "epoch" o posterior a la venta). */
+  fechaFabSospechosa: number;
 }
 
 export interface PuntoMensualLeadTime {

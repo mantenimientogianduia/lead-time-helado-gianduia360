@@ -104,7 +104,14 @@ async function cargarDatos(desde: string, hasta: string, familia?: string): Prom
       serieMensual: [],
       porFamilia: [],
       porProducto: [],
-      cobertura: { totalLineas: 0, conFechaFabricacion: 0, pctCobertura: null, sinCabeceraVenta: 0, notasCredito: 0 },
+      cobertura: {
+        totalLineas: 0,
+        conFechaFabricacion: 0,
+        pctCobertura: null,
+        sinCabeceraVenta: 0,
+        notasCredito: 0,
+        fechaFabSospechosa: 0,
+      },
       familias: [],
       partidasPorRiesgo: { ok: 0, riesgo: 0, critico: 0, sin_parametro: 0 },
       vejezPorFamilia: [],
@@ -135,6 +142,11 @@ export default async function ResumenPage({
   }
   if (cobertura.sinCabeceraVenta > 0) {
     mensajes.push(`${cobertura.sinCabeceraVenta} ventas del período sin cabecera asociada (dato histórico incompleto).`);
+  }
+  if (cobertura.fechaFabSospechosa > 0) {
+    mensajes.push(
+      `${cobertura.fechaFabSospechosa} ventas del período tienen fecha de fabricación cargada pero inválida (ej. 01/01/1970) — se excluyen del cálculo de lead time, no se cuentan como cobertura.`
+    );
   }
 
   const productosRankeados = porProducto

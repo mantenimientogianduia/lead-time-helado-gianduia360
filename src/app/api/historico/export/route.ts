@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
       { encabezado: "Fecha fabricación (lote_fabricacion)", valor: (f) => formatearFecha(f.loteFabricacion) },
       { encabezado: "Días lead time", valor: (f) => f.diasLeadTime },
       { encabezado: "Lead time permitido", valor: (f) => f.leadtimePermitido },
+      { encabezado: "Fecha fabricación sospechosa", valor: (f) => (f.fechaFabSospechosa ? "Sí" : "No") },
       { encabezado: "Sin cabecera de venta", valor: (f) => (f.sinCabeceraVenta ? "Sí" : "No") },
     ]);
 

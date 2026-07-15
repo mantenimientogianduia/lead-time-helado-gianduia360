@@ -17,6 +17,16 @@ tres familias exactas, nada más.
 
 - Fuente de "fecha de fabricación": `f_detalles_ventas.lote_fabricacion`. Cobertura real medida:
   99,9%. El resto de las ventas del período queda fuera del cálculo (no se inventa una fecha).
+- **Bug de datos confirmado y corregido (2026-07-15)**: `lote_fabricacion` a veces queda grabado
+  como fecha "epoch" (`1970-01-01` o `1970-01-02`) en vez de `NULL` cuando el dato nunca se cargó.
+  Sin corrección, esto generaba lead times de ~20.500 días (56 años) en ventas reales de `BACHA`,
+  `BALDE` y `PINTAS` — no era exclusivo de la familia `PRUEBA`. Detectadas 43 ventas afectadas sobre
+  ~41.600 con `lote_fabricacion` cargado (~0,1%). Se corrigió tratando como "sin fecha de
+  fabricación" (no como día 0) cualquier `lote_fabricacion` anterior al `2015-01-01`
+  (`FECHA_FABRICACION_MINIMA` en `src/lib/repositories/shared.ts`), y también los casos donde
+  `fecha_venta < lote_fabricacion` (2 casos, orden temporal imposible). Estas ventas se excluyen del
+  cálculo de lead time y de la cobertura, pero no se ocultan: se cuentan aparte como
+  `fechaFabSospechosa` y se muestran como aviso en la UI y como columna en los exports CSV.
 - Se excluyen las notas de crédito (`nc = true`) del histórico de ventas real.
 - Las ventas con `id_venta` huérfano (sin cabecera en `f_ventas`, ~0,08% del volumen) se incluyen
   en el cálculo de lead time porque tienen su propia `fecha_venta`/`lote_fabricacion`, pero no se

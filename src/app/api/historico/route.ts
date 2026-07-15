@@ -53,6 +53,11 @@ export async function GET(request: NextRequest) {
         `${cobertura.sinCabeceraVenta} líneas de venta sin cabecera asociada en el período (dato histórico incompleto, igual se incluyen en el lead time).`
       );
     }
+    if (cobertura.fechaFabSospechosa > 0) {
+      avisos.push(
+        `${cobertura.fechaFabSospechosa} líneas con fecha de fabricación inválida (ej. 01/01/1970) excluidas del cálculo de lead time.`
+      );
+    }
 
     const respuesta: RespuestaHistorico = { serieMensual, porFamilia, porProducto, cobertura, avisos };
     return NextResponse.json(respuesta);
